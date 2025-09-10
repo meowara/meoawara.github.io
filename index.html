@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Seven Little Surprises</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #ffe4f9 url('assets/hello-kitty-small.png') bottom left no-repeat,
+                #ffe4f9 url('assets/batman-small.png') top right no-repeat;
+    background-size: 80px 80px, 80px 80px;
+    overflow-x: hidden;
+    color: #4e2350;
+  }
+  #envelope-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    perspective: 1200px;
+    cursor: pointer;
+    position: relative;
+    background: transparent;
+  }
+  .envelope {
+    width: 180px;
+    height: 140px;
+    background: linear-gradient(145deg, #feacd8, #fd6999);
+    border-radius: 20px 20px 10px 10px;
+    box-shadow:
+      inset 0 5px 7px rgba(255,255,255,0.7),
+      0px 10px 40px rgba(253,93,138,0.6);
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: sway 5s ease-in-out infinite alternate;
+  }
+  #envelope-container.opened .envelope {
+    transform: rotateX(180deg);
+    animation-play-state: paused;
+    box-shadow: 0 5px 25px rgba(253,93,138,0.9);
+  }
+  @keyframes sway {
+    0% { transform: rotateY(-5deg) rotateX(2deg); }
+    50% { transform: rotateY(7deg) rotateX(-3deg); }
+    100% { transform: rotateY(-5deg) rotateX(2deg); }
+  }
+
+  /* Flap */
+  .flap {
+    position: absolute;
+    top: 0; left: 0;
+    width: 180px;
+    height: 70px;
+    background: linear-gradient(45deg, #fd558f, #fa329d);
+    border-radius: 20px 20px 0 0;
+    box-shadow: inset 0 2px 5px rgba(255,255,255,0.5);
+    transform-origin: bottom center;
+    backface-visibility: hidden;
+    border-bottom: 3px solid #ee4c7b;
+    z-index: 9;
+    transition: transform 1.2s cubic-bezier(0.4,0,0.2,1);
+  }
+  #envelope-container.opened .flap {
+    transform: rotateX(-180deg);
+  }
+
+  /* Letter inside */
+  .letter {
+    position: absolute;
+    width: 170px;
+    height: 120px;
+    background: #fff;
+    top: 10px;
+    left: 5px;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px #ee4c7b88;
+    backface-visibility: hidden;
+    padding: 20px;
+    font-family: 'Pacifico', cursive;
+    font-size: 1.25rem;
+    color: #fd557a;
+    opacity: 0;
+    transition: opacity 1.4s ease 1s;
+  }
+  #envelope-container.opened .letter {
+    opacity: 1;
+  }
+
+  #surprises-page {
+    max-width: 960px;
+    margin: 40px auto 80px;
+    padding: 0 20px;
+    display: none;
+    text-align: center;
+    font-weight: 700;
+    color: #ff65a1;
+  }
+  #surprises-page h1 {
+    font-size: 3rem;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 6px #7a2441cc;
+    font-family: 'Pacifico', cursive;
+  }
+
+  .grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
+    gap: 25px;
+  }
+  .grid-item {
+    background: #ffddea;
+    border-radius: 24px;
+    cursor: pointer;
+    padding: 30px 15px 20px;
+    box-shadow: 0 10px 35px #fd658570;
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    user-select: none;
+  }
+  .grid-item:hover {
+    transform: scale(1.12);
+    box-shadow: 0 15px 40px #f06d8caa;
+  }
+  .grid-item img {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    border-radius: 16px;
+    margin-bottom: 15px;
+    pointer-events: none;
+    filter: drop-shadow(1px 3px 6px #fd416cbb);
+  }
+  .grid-item span {
+    font-size: 2.5rem;
+    color: #ff6ba0;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+  }
+
+  /* Modal styling */
+  .modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0,0,0,0.36);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 4000;
+  }
+  .modal.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .modal-content {
+    background: #fef0f6;
+    border-radius: 30px;
+    max-width: 480px;
+    width: 90vw;
+    min-height: 360px;
+    padding: 30px 25px;
+    box-shadow: 0 8px 20px #ee4c7bcc;
+    overflow-y: auto;
+    user-select: text;
+    font-size: 1rem;
+    color: #a02956;
+  }
+  .modal-close {
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    cursor: pointer;
+    font-size: 1.4rem;
+    color: #ee4266cc;
+    background: #fde2e2;
+    border-radius: 50%;
+    border: none;
+    width: 36px;
+    height: 36px;
+    font-weight: 700;
+    transition: background-color 0.3s ease;
+  }
+  .modal-close:hover {
+    background: #fd6585;
+    color: white;
+  }
+  .modal-content img,
+  .modal-content video {
+    max-width: 100%;
+    margin: 15px auto 0;
+    border-radius: 18px;
+    display: block;
+  }
+  .modal-content video {
+    outline: none;
+  }
+  .modal-scrollable {
+    max-height: 290px;
+    overflow-y: auto;
+    margin-top: 10px;
+    white-space: pre-wrap;
+    line-height: 1.45;
+    font-weight: 600;
+  }
+
+  /* Responsive */
+  @media(max-width: 480px) {
+    .grid-container {
+      grid-template-columns: repeat(auto-fit,minmax(140px, 1fr));
+      gap: 15px;
+    }
+    .grid-item img {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 10px;
+    }
+    .grid-item span {
+      font-size: 2rem;
+    }
+    #surprises-page h1 {
+      font-size: 2rem;
+    }
+    .modal-content {
+      max-width: 95vw;
+      min-height: 320px;
+      padding: 20px 15px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="envelope-container" title="Click to open the envelope">
+  <div class="envelope">
+    <div class="flap"></div>
+    <div class="letter">Click me, bby! 💖</div>
+  </div>
+</div>
+
+<div id="surprises-page" style="display:none;">
+  <h1>✨ Seven Little Surprises ✨</h1>
+  <div class="grid-container" id="grid-container"></div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content" id="modal-content">
+    <button class="modal-close" id="modal-close" aria-label="Close modal">&times;</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+  const envelopeContainer = document.getElementById('envelope-container');
+  const surprisesPage = document.getElementById('surprises-page');
+  const gridContainer = document.getElementById('grid-container');
+  const modal = document.getElementById('modal');
+  const modalClose = document.getElementById('modal-close');
+  const modalBody = document.getElementById('modal-body');
+
+  // Surprises data
+  const surprises = [
+    { id: 'intro', img: 'assets/intro.png', title: '😭', type: 'letter', content: `Yoo bbyyy ❤️\nHeh this is me — SARTHI 💋 I don’t even know why I felt like making this but my heart just wanted to 😛 so here it is, a little gift only for you 🥀\nI honestly don’t know if it’s good or not 😭 but I really tried my best 💔 Every single bit of this is just for you ❤️\nYou're so cute awww (piddi piggi) hehe and this is just my tiny way of saying how much I love you 💋 mwahh bbyyy ❤️` },
+    { id: 'love', img: 'assets/love.png', title: '💋', type: 'letter', content: `My lil piggi 😭💖\nYou make me feel so loved and happy in ways I can’t even put into words. Every little thing you do lights up my heart, and being with you feels like home. You’re my favorite person, my joy, and my safe place. I love you more than words could ever show 💖\nAlways yours,\nSarthiiii 💕` },
+    { id: 'jealousy', img: 'assets/jealousy.png', title: '🥀', type: 'letter', content: `Vihaan 😤💖\nWell… jaa jao, jakr Annanya aur Sannidhi ki vid aur photo dekho jao jao 🙄💢 I honestly don’t care haha 😛💔\nBut ughhh, I get jealous sooo easily 😒🥀 Feels like you’re just asking for trouble hehe 😏\nAnyway… go ahead and scroll 😒💔\nBut don’t be surprised if I get suuuper petty hehe 😏🥀\nLYSMM mwahhh 💕` },
+    { id: 'sorry', img: 'assets/sorry.png', title: '😔', type: 'letter', content: `Dearr Vihaan 😔💖\nI’m truly sorry for letting you down and not being there when you needed me. I regret not being there when you missed me a lot aww, and for the moments lost because of my thoughtlessness… Please forgive me for my mistakes. I’ll try my best to improve hehe 💕\nLYSMM mwahhh 😘\nYours bbyy,\nMeowaraaa` },
+    { id: 'edit', img: 'assets/edit-pfp.png', title: 'heh 😛', type: 'video', content: 'assets/edit.mp4' },
+    { id: 'collage', img: 'assets/collage-pfp.png', title: 'us bbu?', type: 'image', content: 'assets/collage.png' },
+    { id: 'game', img: 'assets/game.png', title: '🎮', type: 'game', content: null }
+  ];
+
+  // Populate the surprise boxes
+  function populateGrid() {
+    gridContainer.innerHTML = '';
+    surprises.forEach(s => {
+      const box = document.createElement('div');
+      box.classList.add('grid-item');
+      box.setAttribute('data-id', s.id);
+      box.setAttribute('tabindex', '0');
+      box.innerHTML = `
+        <img src="${s.img}" alt="${s.title}" draggable="false" />
+        <span>${s.title}</span>
+      `;
+      gridContainer.appendChild(box);
+    });
+  }
+
+  envelopeContainer.addEventListener('click', () => {
+    envelopeContainer.classList.add('opened');
+    setTimeout(() => {
+      envelopeContainer.style.display = 'none';
+      surprisesPage.style.display = 'block';
+      populateGrid();
+    }, 1500);
+  });
+
+  modalClose.addEventListener('click', () => {
+    modal.classList.remove('active');
+    modalBody.innerHTML = '';
+  });
+
+  gridContainer.addEventListener('click', (e) => {
+    const box = e.target.closest('.grid-item');
+    if (!box) return;
+    const id = box.getAttribute('data-id');
+    const surprise = surprises.find(s => s.id === id);
+    if (!surprise) return;
+
+    if (surprise.type === 'letter') {
+      modalBody.innerHTML = `<div class="modal-scrollable">${surprise.content.replace(/\n/g, '<br>')}</div>`;
+      modal.classList.add('active');
+    } else if (surprise.type === 'video') {
+      modalBody.innerHTML = `<video controls autoplay muted src="${surprise.content}"></video>`;
+      modal.classList.add('active');
+    } else if (surprise.type === 'image') {
+      modalBody.innerHTML = `<img src="${surprise.content}" alt="Collage" />`;
+      modal.classList.add('active');
+    } else if (surprise.type === 'game') {
+      modalBody.innerHTML = `<p style="text-align:center; font-weight:700; font-size:1.2rem; color:#fd557a;">Game will come here soon!</p>`;
+      modal.classList.add('active');
+    }
+  });
+</script>
+
+</body>
+</html>
